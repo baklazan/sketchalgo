@@ -1,5 +1,6 @@
 package sk.ksp.baklazan.sketchalgo;
 import sk.ksp.baklazan.sketchalgo.structure.*;
+import sk.ksp.baklazan.sketchalgo.structure.arraylist.*;
 import java.util.*;
 import java.lang.*;
 

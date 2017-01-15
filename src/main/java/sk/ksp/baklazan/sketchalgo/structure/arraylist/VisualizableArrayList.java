@@ -1,4 +1,5 @@
-package sk.ksp.baklazan.sketchalgo.structure;
+package sk.ksp.baklazan.sketchalgo.structure.arraylist;
+import sk.ksp.baklazan.sketchalgo.structure.*;
 import java.util.*;
 import java.lang.*;
 import java.awt.image.*;
@@ -22,6 +23,7 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 	private String myName;
 	private ArrayList<Boolean> beingRead, beingWritten;
 	private SleepConstants sleepConstants;
+	private ListAssemblingStrategy assemblingStrategy;
 	
 	public static class SleepConstants
 	{
@@ -35,6 +37,7 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 			this.batchGet = batchGet;
 		}
 	}
+	
 	
 	private int adjustDimension(int old, int requested)
 	{
@@ -108,24 +111,17 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 			maxHeight = Math.max(maxHeight, image.getHeight());
 		}
 		
-		cellWidth = adjustDimension(cellWidth, maxWidth);
-		cellHeight = adjustDimension(cellHeight, maxHeight);
+		cellWidth = maxWidth;//adjustDimension(cellWidth, maxWidth);
+		cellHeight = maxHeight;//adjustDimension(cellHeight, maxHeight);
 		enforceMinSize();
 		
-		BufferedImage result = 
-		  new BufferedImage((cellWidth+2) * super.size() + 2, cellHeight + 4, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D graphics = result.createGraphics();
-		graphics.setColor(Color.BLACK);
-		graphics.fillRect(0, 0, result.getWidth(), result.getHeight());
-		graphics.setColor(Color.WHITE);
 		for(int i=0; i<super.size(); i++)
 		{
-			graphics.fillRect((cellWidth+2) * i+2, 2, cellWidth, cellHeight);
+			BufferedImage resized = new BufferedImage(cellWidth, cellHeight, BufferedImage.TYPE_INT_ARGB);
+			Graphics2D graphics = resized.createGraphics();
 			BufferedImage image = childrenImage.get(i);
-			graphics.drawImage(image, 
-			             (cellWidth+2)*i+2 + (cellWidth - image.getWidth())/2,
-			             2 + (cellHeight - image.getHeight())/2,
-			             null);
+			graphics.drawImage(image, (cellWidth - image.getWidth())/2, (cellHeight - image.getHeight())/2, null);
+			
 			if(beingWritten.get(i) || beingRead.get(i))
 			{
 				BufferedImage screen = new BufferedImage(cellWidth, cellHeight, BufferedImage.TYPE_INT_ARGB);
@@ -133,9 +129,13 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 				if(beingRead.get(i))gr.setColor(new Color(0, 200, 0, 100));
 				if(beingWritten.get(i))gr.setColor(new Color(255, 0, 0, 100));
 				gr.fillRect(0,0, screen.getWidth(), screen.getHeight());
-				graphics.drawImage(screen, (cellWidth+2)*i+2, 2, null);
+				graphics.drawImage(screen, 0, 0, null);
 			}
+			childrenImage.set(i, resized);
 		}
+		
+		BufferedImage result = assemblingStrategy.assemble(childrenImage, cellWidth, cellHeight);
+		
 		if(sleepConstants.batchGet)
 		{
 			for(int i=0; i<beingRead.size(); i++)beingRead.set(i, false);
@@ -143,6 +143,7 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 		
 		if(myName != null)
 		{
+			Graphics2D graphics = result.createGraphics();
 			FontMetrics metrics = graphics.getFontMetrics();
 			Rectangle2D rect = metrics.getStringBounds(myName, graphics);
 			int height = result.getHeight() + (int)rect.getHeight()+4;
@@ -168,6 +169,7 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 		beingWritten = new ArrayList<Boolean>();
 		myName = name;
 		sleepConstants = new SleepConstants(0, 100, 300, false);
+		assemblingStrategy = HorizontalAssemblingStrategy.getInstance();
 	}
 	
 	public void setSleepConstants(SleepConstants sleepConstants)
@@ -197,6 +199,32 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 		return boxHeight;
 	}
 	
+	public void setAssemblingStrategy(ListAssemblingStrategy strategy)
+	{
+		assemblingStrategy = strategy;
+		for(int i=0; i<super.size(); i++)
+		{
+			ensureCompatibleStrategy(super.get(i));
+		}
+	}
+	
+	private void ensureCompatibleStrategy(Object o)
+	{
+		if(o instanceof VisualizableArrayList)
+		{
+			VisualizableArrayList list = (VisualizableArrayList)(o);
+			
+			if(list.assemblingStrategy == this.assemblingStrategy)
+			{
+				ListAssemblingStrategy perpendicular = this.assemblingStrategy.getPerpendicular();
+				if(perpendicular != null)
+				{
+					list.setAssemblingStrategy(perpendicular);
+				}
+			}
+		}
+	}
+	
 	private void register(Object o)
 	{
 		if(o instanceof VisualizableStructure)
@@ -214,9 +242,9 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 		E result = super.set(index, element);
 		requestRedrawAndDelay(sleepConstants.sleepSet / 2);
 		beingWritten.set(index, false);
+		ensureCompatibleStrategy(element);
 		requestRedrawAndDelay(0);
 		register(element);
-		
 		return result;
 	}
 	
@@ -226,6 +254,7 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 		super.add(e);
 		beingRead.add(false);
 		beingWritten.add(false);
+		ensureCompatibleStrategy(e);
 		requestRedrawAndDelay(sleepConstants.sleepAdd);
 		register(e);
 		return true;
