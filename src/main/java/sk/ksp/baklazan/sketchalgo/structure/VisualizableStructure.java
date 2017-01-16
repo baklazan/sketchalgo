@@ -5,7 +5,5 @@ import java.awt.image.*;
 public interface VisualizableStructure
 {
 	BufferedImage draw();
-	int getBoxWidth();
-	int getBoxHeight();
 	void setDisplayer(StructureDisplayer sd);
 }

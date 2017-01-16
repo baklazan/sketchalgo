@@ -17,7 +17,6 @@ import javafx.application.*;
 
 public class VisualizableArrayList<E> extends ArrayList<E> implements VisualizableStructure, StructureDisplayer
 {
-	private int boxWidth, boxHeight;
 	private int cellWidth, cellHeight;
 	private StructureDisplayer displayer;
 	private String myName;
@@ -75,28 +74,6 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 	}
 	
 	
-	private static BufferedImage draw(Object o)
-	{
-		if(o instanceof VisualizableStructure)
-		{
-			return ((VisualizableStructure)(o)).draw();
-		}
-		else
-		{
-			String string = o.toString();
-			if(string.length() > 8) string = string.substring(0,8);
-			
-			BufferedImage tmp = new BufferedImage(1,1, BufferedImage.TYPE_INT_ARGB);
-			Graphics2D graphics = tmp.createGraphics();
-			FontMetrics metrics = graphics.getFontMetrics();
-			Rectangle2D rect = metrics.getStringBounds(string, graphics);
-			BufferedImage result = new BufferedImage((int)rect.getWidth()+4, (int)rect.getHeight()+4, BufferedImage.TYPE_INT_ARGB);
-			graphics = result.createGraphics();
-			graphics.setColor(Color.BLACK);
-			graphics.drawString(string, (int)(-rect.getX())+2, (int)(-rect.getY())+2);
-			return result;
-		}
-	}
 	
 	@Override
 	public BufferedImage draw()
@@ -105,7 +82,7 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 		int maxWidth = 0, maxHeight = 0;
 		for(int i=0; i<super.size(); i++)
 		{
-			BufferedImage image = draw(super.get(i));
+			BufferedImage image = ObjectDrawer.draw(super.get(i));
 			childrenImage.add(image);
 			maxWidth = Math.max(maxWidth, image.getWidth());
 			maxHeight = Math.max(maxHeight, image.getHeight());
@@ -127,7 +104,7 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 				BufferedImage screen = new BufferedImage(cellWidth, cellHeight, BufferedImage.TYPE_INT_ARGB);
 				Graphics2D gr = screen.createGraphics();
 				if(beingRead.get(i))gr.setColor(new Color(0, 200, 0, 100));
-				if(beingWritten.get(i))gr.setColor(new Color(255, 0, 0, 100));
+				if(beingWritten.get(i))gr.setColor(new Color(255, 128, 0, 100));
 				gr.fillRect(0,0, screen.getWidth(), screen.getHeight());
 				graphics.drawImage(screen, 0, 0, null);
 			}
@@ -160,8 +137,6 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 	
 	private void init(String name)
 	{
-		boxWidth = 0;
-		boxHeight = 0;
 		cellWidth = 0;
 		cellHeight = 0;
 		displayer = null;
@@ -188,16 +163,6 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 		init(name);
 	}
 	
-	@Override
-	public int getBoxWidth()
-	{
-		return boxWidth;
-	}
-	@Override
-	public int getBoxHeight()
-	{
-		return boxHeight;
-	}
 	
 	public void setAssemblingStrategy(ListAssemblingStrategy strategy)
 	{
@@ -240,9 +205,9 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 		beingWritten.set(index, true);
 		requestRedrawAndDelay(sleepConstants.sleepSet / 2);
 		E result = super.set(index, element);
+		ensureCompatibleStrategy(element);
 		requestRedrawAndDelay(sleepConstants.sleepSet / 2);
 		beingWritten.set(index, false);
-		ensureCompatibleStrategy(element);
 		requestRedrawAndDelay(0);
 		register(element);
 		return result;

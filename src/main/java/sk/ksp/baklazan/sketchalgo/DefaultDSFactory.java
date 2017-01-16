@@ -1,6 +1,7 @@
 package sk.ksp.baklazan.sketchalgo;
 import sk.ksp.baklazan.sketchalgo.structure.*;
 import sk.ksp.baklazan.sketchalgo.structure.arraylist.*;
+import sk.ksp.baklazan.sketchalgo.structure.map.*;
 import java.util.*;
 import java.lang.*;
 
@@ -64,6 +65,32 @@ public class DefaultDSFactory extends DSFactory
 	public VisualizableArrayList.SleepConstants createSleepConstants(int sleepAdd, int sleepGet, int sleepSet, boolean batchGet)
 	{
 		return new VisualizableArrayList.SleepConstants(sleepAdd, sleepGet, sleepSet, batchGet);
+	}
+	
+	public <K, V> TreeMap<K, V> createTreeMap(String name)
+	{
+		return createTreeMap(name, true);
+	}
+	
+	public <K, V> TreeMap<K, V> createTreeMap(boolean registered)
+	{
+		return createTreeMap(null, registered);
+	}
+	
+	public <K, V> TreeMap<K, V> createTreeMap()
+	{
+		return createTreeMap(null, true);
+	}
+	
+	public <K, V> TreeMap<K, V> createTreeMap(String name, boolean registered)
+	{
+		VisualizableTreeMap<K, V> result = new VisualizableTreeMap<K, V>(name);
+		if(registered)
+		{
+			result.setDisplayer(watcher);
+			watcher.register(result);
+		}
+		return result;
 	}
 	
 	public LayoutHint createHint(Object reference, LayoutHint.Direction direction)
