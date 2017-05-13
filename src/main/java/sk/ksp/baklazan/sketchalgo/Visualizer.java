@@ -1,4 +1,5 @@
 package sk.ksp.baklazan.sketchalgo;
+import sk.ksp.baklazan.sketchalgo.display.DisplayStrategy;
 import sk.ksp.baklazan.sketchalgo.structure.*;
 import java.util.*;
 import java.lang.*;
@@ -22,6 +23,7 @@ public class Visualizer implements AlgorithmWatcher
 	private Map<VisualizableStructure, LayoutHint> hints;
 	private String algorithmState;
 	private Theme theme;
+	private DisplayStrategy displayStrategy;
 	
 	@Override
 	public DefaultDSFactory getFactory()
@@ -29,9 +31,9 @@ public class Visualizer implements AlgorithmWatcher
 		return factory;
 	}
 	
-	public Visualizer(Canvas canvas)
+	public Visualizer(DisplayStrategy displayStrategy)
 	{
-		this(canvas, new DefaultTheme());
+		this(displayStrategy, new DefaultTheme());
 	}
 	
 	public Theme getTheme()
@@ -39,10 +41,10 @@ public class Visualizer implements AlgorithmWatcher
 		return theme;
 	}
 	
-	public Visualizer(Canvas canvas, Theme theme)
+	public Visualizer(DisplayStrategy displayStrategy, Theme theme)
 	{
 		factory = new DefaultDSFactory(this, theme);
-		this.canvas = canvas;
+		this.displayStrategy = displayStrategy;
 		structures = new ArrayList<WeakReference<VisualizableStructure> >();
 		hints = new IdentityHashMap<VisualizableStructure, LayoutHint>();
 		algorithmState = null;
@@ -81,19 +83,11 @@ public class Visualizer implements AlgorithmWatcher
 		redraw();
 	}
 	
-	protected void flip(BufferedImage surface)
-	{
-		GraphicsContext gc = canvas.getGraphicsContext2D();
-		Platform.runLater(() -> gc.setFill(Color.WHITE));
-		Platform.runLater(() -> gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight()));
-		Platform.runLater(() -> gc.drawImage(SwingFXUtils.toFXImage(surface, null), 0, 0));
-	}
 	
-	/** For testing purposes */
-	public void redraw()
+	private BufferedImage draw()
 	{
-		BufferedImage surface =
-		  new BufferedImage((int)(canvas.getWidth()), (int)(canvas.getHeight()), BufferedImage.TYPE_INT_ARGB);
+		Rectangle size = displayStrategy.getSize();
+		BufferedImage surface = new BufferedImage(size.width, size.height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D graphics = surface.createGraphics();
 		
 		Map<Object, Rectangle> place = new IdentityHashMap<Object, Rectangle>();
@@ -143,23 +137,24 @@ public class Visualizer implements AlgorithmWatcher
 			place.put(structure, new Rectangle(x, y, image.getWidth(), image.getHeight()));
 			maxY = Math.max(y + image.getHeight(), maxY);
 		}
-		flip(surface);
+		return surface;
+	}
+	
+	private void redraw()
+	{
+		redraw(0);
+	}
+	
+	private void redraw(int delay)
+	{
+		BufferedImage frame = draw();
+		displayStrategy.addFrame(frame, delay);
 	}
 	
 	@Override
 	public void requestRedraw(VisualizableStructure caller, int delay)
 	{
-		redraw();
-		if(delay > 0)
-		{
-			try
-			{
-				Thread.sleep(delay);
-			}
-			catch(Exception e)
-			{
-			}
-		}
+		redraw(delay);
 	}
 	
 }

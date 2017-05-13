@@ -1,5 +1,6 @@
 package sk.ksp.baklazan.demo.hamming;
 import sk.ksp.baklazan.sketchalgo.*;
+import sk.ksp.baklazan.sketchalgo.display.CanvasDisplayStrategy;
 import java.util.*;
 import java.io.*;
 import java.lang.*;
@@ -23,7 +24,7 @@ public class MainTask extends Thread
 	public MainTask(Canvas canvas)
 	{
 		super("main task thread");
-		this.visualizer = new Visualizer(canvas);
+		this.visualizer = new Visualizer(new CanvasDisplayStrategy(canvas));
 		this.factory = visualizer.getFactory();
 	}
 	
