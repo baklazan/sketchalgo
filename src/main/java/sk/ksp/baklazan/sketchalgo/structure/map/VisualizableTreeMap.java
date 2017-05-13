@@ -20,7 +20,6 @@ import javafx.application.*;
 
 public class VisualizableTreeMap<K, V> extends TreeMap<K, V> implements VisualizableStructure, StructureDisplayer
 {
-	private int keyCellWidth, valCellWidth, keyCellHeight, valCellHeight;
 	private Theme theme;
 	private StructureDisplayer displayer;
 	private String myName;
@@ -29,104 +28,7 @@ public class VisualizableTreeMap<K, V> extends TreeMap<K, V> implements Visualiz
 	private SleepConstants sleepConstants;
 	private boolean inner;
 	
-	
-	public static class SleepConstants
-	{
-		private int sleepGet, sleepSet, sleepAdd, sleepRemove;
-		private boolean batchGet;
-		public SleepConstants(int sleepAdd, int sleepGet, int sleepRemove, int sleepSet, boolean batchGet)
-		{
-			this.sleepGet = sleepGet;
-			this.sleepSet = sleepSet;
-			this.sleepAdd = sleepAdd;
-			this.sleepRemove = sleepRemove;
-			this.batchGet = batchGet;
-		}
-	}
-	
-	public void setTheme(Theme theme)
-	{
-		this.theme = theme;
-	}
-	
-	@Override
-	public void setInner(boolean inner)
-	{
-		this.inner = inner;
-	}
-	
-	private int adjustDimension(int old, int requested)
-	{
-		if(old < requested) return Math.max((int)(old * 1.5), requested);
-		if(old > requested)
-		{
-			if(requested * 5 > old) return old;
-			return requested;
-		}
-		return old;
-	}
-	
-	private void enforceMinSize()
-	{
-		keyCellHeight = Math.max(keyCellHeight, theme.minCellHeight);
-		keyCellWidth = Math.max(keyCellWidth, theme.minCellWidth);
-		valCellHeight = Math.max(valCellHeight, theme.minCellHeight);
-		valCellWidth = Math.max(valCellWidth, theme.minCellWidth);
-	}
-	
-	private void requestRedrawAndDelay(int time)
-	{
-		if(displayer != null)
-		{
-			displayer.requestRedraw(this, time);
-		}
-	}
-	
-	private Rectangle preferredKeySize()
-	{
-		int maxKeyWidth = 0, maxKeyHeight = 0;
-		for(Map.Entry<K, V> entry : super.entrySet())
-		{
-			Rectangle keyRect = ObjectDrawer.preferredSize(entry.getKey(), theme);
-			maxKeyWidth = Math.max(maxKeyWidth, keyRect.width);
-			maxKeyHeight = Math.max(maxKeyHeight, keyRect.height);
-		}
-		
-		keyCellWidth = maxKeyWidth;//adjustDimension(keyCellWidth, maxKeyWidth);
-		keyCellHeight = maxKeyHeight;//adjustDimension(keyCellHeight, maxKeyHeight);
-		enforceMinSize();
-		return new Rectangle(keyCellWidth, keyCellHeight);
-	}
-	
-	private Rectangle preferredValSize()
-	{
-		int maxValWidth = 0, maxValHeight = 0;
-		for(Map.Entry<K, V> entry : super.entrySet())
-		{
-			Rectangle valRect = ObjectDrawer.preferredSize(entry.getValue(), theme);
-			maxValWidth = Math.max(maxValWidth, valRect.width);
-			maxValHeight = Math.max(maxValHeight, valRect.height);
-		}
-		
-		valCellWidth = maxValWidth;//adjustDimension(valCellWidth, maxValWidth);
-		valCellHeight = maxValHeight;//adjustDimension(valCellHeight, maxValHeight);
-		enforceMinSize();
-		return new Rectangle(valCellWidth, valCellHeight);
-	}
-	
-	@Override
-	public Rectangle preferredSize()
-	{
-		Rectangle keySize = preferredKeySize();
-		Rectangle valSize = preferredValSize();
-		int cellWidth = keySize.width + valSize.width + theme.internalBorderThin;
-		int cellHeight = Math.max(keySize.height, valSize.height);
-		int width = cellWidth+2*theme.getExternalBorder(inner);
-		int height = cellHeight * super.size();
-		height += theme.internalBorder * Math.max(0,super.size()-1);
-		height += 2*theme.getExternalBorder(inner);
-		return new Rectangle(width, height);
-	}
+	/** VisualizableStructure overridden methods */
 	
 	@Override
 	public BufferedImage draw()
@@ -151,9 +53,9 @@ public class VisualizableTreeMap<K, V> extends TreeMap<K, V> implements Visualiz
 		int horizontalOverhead = 2*border + theme.internalBorderThin;
 		double horizontalRatio = (size.width-horizontalOverhead)/(preferredSize().width-horizontalOverhead);
 		Rectangle keySize = preferredKeySize();
-		keyCellWidth = (int)(keySize.width * horizontalRatio);
-		valCellWidth = size.width - horizontalOverhead - keyCellWidth;
-		keySize = new Rectangle(keyCellWidth, cellHeight);
+		keySize.width *= horizontalRatio;
+		keySize.height = cellHeight;
+		int valCellWidth = size.width - horizontalOverhead - keySize.width;
 		Rectangle valSize = new Rectangle(valCellWidth, cellHeight);
 		
 		ArrayList<BufferedImage> keyImages = new ArrayList<BufferedImage>(), valImages = new ArrayList<BufferedImage>();
@@ -177,9 +79,9 @@ public class VisualizableTreeMap<K, V> extends TreeMap<K, V> implements Visualiz
 		for(int i=0; i<super.size(); i++)
 		{
 			int baseX = border, baseY = (cellHeight+theme.internalBorder)*i+border;
-			int baseValX = baseX + keyCellWidth + theme.internalBorderThin;
-			graphics.fillRect(baseX, baseY, keyCellWidth, cellHeight);
-			graphics.fillRect(baseValX, baseY, valCellWidth, cellHeight);
+			int baseValX = baseX + keySize.width + theme.internalBorderThin;
+			graphics.fillRect(baseX, baseY, keySize.width, cellHeight);
+			graphics.fillRect(baseValX, baseY, valSize.width, cellHeight);
 			BufferedImage keyImage = keyImages.get(i);
 			BufferedImage valImage = valImages.get(i);
 			K key = ithKey.get(i);
@@ -208,7 +110,7 @@ public class VisualizableTreeMap<K, V> extends TreeMap<K, V> implements Visualiz
 			
 		}
 		
-		if(sleepConstants.batchGet)
+		if(sleepConstants.getType == SleepConstants.GET_BATCH)
 		{
 			beingRead.clear();
 		}
@@ -237,54 +139,73 @@ public class VisualizableTreeMap<K, V> extends TreeMap<K, V> implements Visualiz
 		return result;
 	}
 	
-	private void init(String name)
+	@Override
+	public Rectangle preferredSize()
 	{
-		keyCellWidth = 0;
-		keyCellHeight = 0;
-		valCellWidth = 0;
-		valCellHeight = 0;
-		displayer = null;
-		beingRead = new TreeSet<Object>();
-		beingWritten = new TreeSet<K>();
-		beingAdded = new TreeSet<K>();
-		beingRemoved = new TreeSet<Object>();
-		myName = name;
-		sleepConstants = new SleepConstants(200, 100, 300, 200, false);
-		theme = new DefaultTheme();
-		inner = false;
+		Rectangle keySize = preferredKeySize();
+		Rectangle valSize = preferredValSize();
+		int cellWidth = keySize.width + valSize.width + theme.internalBorderThin;
+		int cellHeight = Math.max(keySize.height, valSize.height);
+		int width = cellWidth+2*theme.getExternalBorder(inner);
+		int height = cellHeight * super.size();
+		height += theme.internalBorder * Math.max(0,super.size()-1);
+		height += 2*theme.getExternalBorder(inner);
+		return new Rectangle(width, height);
 	}
 	
-	public void setSleepConstants(SleepConstants sleepConstants)
+	@Override
+	public void setDisplayer(StructureDisplayer displayer)
 	{
-		this.sleepConstants = sleepConstants;
-	}
-	
-	public VisualizableTreeMap()
-	{
-		this(null);
-	}
-	
-	public VisualizableTreeMap(String name)
-	{
-		super();
-		init(name);
-	}
-	
-	
-	private void register(Object o)
-	{
-		if(o instanceof VisualizableStructure)
+		this.displayer = displayer;
+		if(this.displayer != null)
 		{
-			((VisualizableStructure)(o)).setDisplayer(this);
+			this.displayer.requestRedraw(this, 0);
 		}
 	}
 	
-	private void setToInner(Object o)
+	@Override
+	public void setInner(boolean inner)
 	{
-		if(o instanceof VisualizableStructure)
+		this.inner = inner;
+	}
+	
+	/** StructureDisplayer overridden methods */
+	
+	@Override
+	public void requestRedraw(VisualizableStructure caller, int delay)
+	{
+		if(displayer != null) displayer.requestRedraw(this, delay);
+	}
+	
+	/** TreeMap[K,V] overridden methods */
+	
+	@Override
+	public V get(Object key)
+	{
+		if(super.containsKey(key))
 		{
-			((VisualizableStructure)(o)).setInner(true);
+			switch(sleepConstants.getType)
+			{
+				case SleepConstants.GET_BATCH:
+				{
+					beingRead.add(key);
+					break;
+				}
+				case SleepConstants.GET_INSTANT:
+				{
+					beingRead.add(key);
+					requestRedrawAndDelay(sleepConstants.sleepGet);
+					beingRead.remove(key);
+					requestRedrawAndDelay(0);
+					break;
+				}
+				case SleepConstants.GET_SILENT:
+				{
+					break;
+				}
+			}
 		}
+		return super.get(key);
 	}
 	
 	@Override
@@ -328,37 +249,104 @@ public class VisualizableTreeMap<K, V> extends TreeMap<K, V> implements Visualiz
 		return result;
 	}
 	
-	@Override
-	public V get(Object key)
+	/** Constructors and related methods */
+	
+	private void init(String name)
 	{
-		if(super.containsKey(key))
+		displayer = null;
+		beingRead = new TreeSet<Object>();
+		beingWritten = new TreeSet<K>();
+		beingAdded = new TreeSet<K>();
+		beingRemoved = new TreeSet<Object>();
+		myName = name;
+		sleepConstants = new SleepConstants(200, 100, 300, 200, SleepConstants.GET_INSTANT);
+		theme = new DefaultTheme();
+		inner = false;
+	}
+	
+	public VisualizableTreeMap()
+	{
+		this(null);
+	}
+	
+	public VisualizableTreeMap(String name)
+	{
+		super();
+		init(name);
+	}
+	
+	/** Public setters */
+	
+	public void setTheme(Theme theme)
+	{
+		this.theme = theme;
+	}
+	
+	public void setSleepConstants(SleepConstants sleepConstants)
+	{
+		this.sleepConstants = sleepConstants;
+	}
+	
+	/** Private misc methods */
+	
+	private void enforceMinSize(Rectangle rect)
+	{
+		rect.width = Math.max(rect.width, theme.minCellWidth);
+		rect.height = Math.max(rect.height, theme.minCellHeight);
+	}
+	
+	private void requestRedrawAndDelay(int time)
+	{
+		if(displayer != null)
 		{
-			beingRead.add(key);
-			if(!sleepConstants.batchGet)
-			{
-				requestRedrawAndDelay(sleepConstants.sleepGet);
-				beingRead.remove(key);
-				requestRedrawAndDelay(0);
-			}
+			displayer.requestRedraw(this, time);
 		}
-		return super.get(key);
 	}
 	
-	@Override
-	public void setDisplayer(StructureDisplayer displayer)
+	private Rectangle preferredKeySize()
 	{
-		this.displayer = displayer;
-		if(this.displayer != null)
+		int maxKeyWidth = 0, maxKeyHeight = 0;
+		for(Map.Entry<K, V> entry : super.entrySet())
 		{
-			this.displayer.requestRedraw(this, 0);
+			Rectangle keyRect = ObjectDrawer.preferredSize(entry.getKey(), theme);
+			maxKeyWidth = Math.max(maxKeyWidth, keyRect.width);
+			maxKeyHeight = Math.max(maxKeyHeight, keyRect.height);
+		}
+		
+		Rectangle keySize = new Rectangle(maxKeyWidth, maxKeyHeight);
+		enforceMinSize(keySize);
+		return keySize;
+	}
+	
+	private Rectangle preferredValSize()
+	{
+		int maxValWidth = 0, maxValHeight = 0;
+		for(Map.Entry<K, V> entry : super.entrySet())
+		{
+			Rectangle valRect = ObjectDrawer.preferredSize(entry.getValue(), theme);
+			maxValWidth = Math.max(maxValWidth, valRect.width);
+			maxValHeight = Math.max(maxValHeight, valRect.height);
+		}
+		
+		Rectangle valSize = new Rectangle(maxValWidth, maxValHeight);
+		enforceMinSize(valSize);
+		return valSize;
+	}
+	
+	private void register(Object o)
+	{
+		if(o instanceof VisualizableStructure)
+		{
+			((VisualizableStructure)(o)).setDisplayer(this);
 		}
 	}
 	
-	@Override
-	public void requestRedraw(VisualizableStructure caller, int delay)
+	private void setToInner(Object o)
 	{
-		if(displayer != null) displayer.requestRedraw(this, delay);
+		if(o instanceof VisualizableStructure)
+		{
+			((VisualizableStructure)(o)).setInner(true);
+		}
 	}
-	
 	
 }

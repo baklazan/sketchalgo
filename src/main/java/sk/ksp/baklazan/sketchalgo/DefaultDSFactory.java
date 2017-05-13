@@ -35,14 +35,14 @@ public class DefaultDSFactory extends DSFactory
 		return createArrayList(name, true, null, hint, null);
 	}
 	
-	public <E> ArrayList<E> createArrayList(String name, boolean registered, VisualizableArrayList.SleepConstants sleepConstants)
+	public <E> ArrayList<E> createArrayList(String name, boolean registered, SleepConstants sleepConstants)
 	{
 		return createArrayList(name, registered, sleepConstants, null, null);
 	}
 	
 	public <E> ArrayList<E> createArrayList(String name, 
 	                                        boolean registered,
-	                                        VisualizableArrayList.SleepConstants sleepConstants, 
+	                                        SleepConstants sleepConstants, 
 	                                        LayoutHint hint)
 	{
 		return createArrayList(name, registered, sleepConstants, hint, null);
@@ -50,7 +50,7 @@ public class DefaultDSFactory extends DSFactory
 	
 	public <E> ArrayList<E> createArrayList(String name, 
 	                                        boolean registered, 
-	                                        VisualizableArrayList.SleepConstants sleepConstants,
+	                                        SleepConstants sleepConstants,
 	                                        LayoutHint hint,
 	                                        ListAssemblingStrategy assemblingStrategy)
 	{
@@ -79,26 +79,28 @@ public class DefaultDSFactory extends DSFactory
 		return result;
 	}
 	
-	public VisualizableArrayList.SleepConstants createSleepConstants(int sleepAdd, int sleepGet, int sleepSet, boolean batchGet)
+	public SleepConstants createSleepConstants(int sleepAdd, int sleepGet, int sleepSet, boolean batchGet)
 	{
-		VisualizableArrayList.SleepConstants.GetType getType;
+		int getType;
 		if(batchGet)
 		{
-			getType = VisualizableArrayList.SleepConstants.GetType.BATCH;
+			getType = SleepConstants.GET_BATCH;
 		}
 		else
 		{
-			getType = VisualizableArrayList.SleepConstants.GetType.INSTANT;
+			getType = SleepConstants.GET_INSTANT;
 		}
 		return createSleepConstants(sleepAdd, sleepGet, sleepSet, getType);
 	}
 	
-	public VisualizableArrayList.SleepConstants createSleepConstants(int sleepAdd, 
-	                                                                 int sleepGet, 
-	                                                                 int sleepSet, 
-	                                                                 VisualizableArrayList.SleepConstants.GetType getType)
+	public SleepConstants createSleepConstants(int sleepAdd, int sleepGet, int sleepSet, int getType)
 	{
-		return new VisualizableArrayList.SleepConstants(sleepAdd, sleepGet, sleepSet, getType);
+		return createSleepConstants(sleepAdd, sleepGet, 0, sleepSet, getType);
+	}
+	
+	public SleepConstants createSleepConstants(int sleepAdd, int sleepGet, int sleepRemove, int sleepSet, int getType)
+	{
+		return new SleepConstants(sleepAdd, sleepGet, sleepRemove, sleepSet, getType);
 	}
 	
 	public <K, V> TreeMap<K, V> createTreeMap(String name)

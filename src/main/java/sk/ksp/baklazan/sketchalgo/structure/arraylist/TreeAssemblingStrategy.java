@@ -36,45 +36,47 @@ public class TreeAssemblingStrategy extends ListAssemblingStrategy
 		return singletonHolder.INSTANCE;
 	}
 	
-	private BufferedImage assemblePart(ArrayList<BufferedImage> elements, int cellWidth, int cellHeight, int index, Theme theme)
+	private BufferedImage assemblePart(ArrayList<BufferedImage> elements, Rectangle cellSize, int index, Theme theme)
 	{
 		int border = theme.getExternalBorder(false);
 		if(index >= elements.size()) return null;
-		BufferedImage left = assemblePart(elements, cellWidth, cellHeight, index*2, theme);
-		BufferedImage right = assemblePart(elements, cellWidth, cellHeight, index*2+1, theme);
-		int width = cellWidth + 2*border, height = cellHeight + 2*border;
+		BufferedImage left = assemblePart(elements, cellSize, index*2, theme);
+		BufferedImage right = assemblePart(elements, cellSize, index*2+1, theme);
+		int width = cellSize.width + 2*border, height = cellSize.height + 2*border;
 		if(left != null)
 		{
 			width = 2*left.getWidth();
-			height += Math.min(cellHeight, cellWidth)/2 + left.getHeight();
+			height += Math.min(cellSize.height, cellSize.width)/2 + left.getHeight();
 		}
 		BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D graphics = result.createGraphics();
 		graphics.setColor(theme.borderColor);
-		graphics.fillRect((width - cellWidth - 2*border)/2, 0, cellWidth + 2*border, cellHeight + 2*border);
+		graphics.fillRect((width - cellSize.width - 2*border)/2, 0, cellSize.width + 2*border, cellSize.height + 2*border);
 		graphics.setColor(theme.backgroundColor);
-		graphics.fillRect((width - cellWidth)/2, border, cellWidth, cellHeight);
-		graphics.drawImage(elements.get(index), (width - cellWidth)/2, border, null);
+		graphics.fillRect((width - cellSize.width)/2, border, cellSize.width, cellSize.height);
+		graphics.drawImage(elements.get(index), (width - cellSize.width)/2, border, null);
 		graphics.setColor(theme.borderColor);
 		if(left != null)
 		{
 			graphics.drawImage(left, 0, height - left.getHeight(), null);
-			graphics.drawLine((width-cellWidth-border)/2, cellHeight + border*3/2, left.getWidth()/2,height - left.getHeight()+1);
+			int xFrom = (width-cellSize.width-border)/2, yFrom = cellSize.height + border*3/2;
+			int xTo = left.getWidth()/2, yTo = height - left.getHeight()+1;
+			graphics.drawLine(xFrom, yFrom, xTo, yTo);
 		}
 		if(right != null)
 		{
 			graphics.drawImage(right, (width/2 * 3 - right.getWidth())/2, height - left.getHeight(), null);
-			graphics.drawLine((width+cellWidth+border)/2, 
-			                  cellHeight + border*3/2,
-			                  (width + left.getWidth())/2,height - left.getHeight()+1);
+			int xFrom = (width+cellSize.width+border)/2, yFrom = cellSize.height + border*3/2;
+			int xTo = (width + left.getWidth())/2, yTo = height - left.getHeight()+1;
+			graphics.drawLine(xFrom, yFrom, xTo, yTo);
 		}
 		return result;
 	}
 	
 	@Override
-	public BufferedImage assemble(ArrayList<BufferedImage> elements, int cellWidth, int cellHeight, Theme theme, boolean inner)
+	public BufferedImage assemble(ArrayList<BufferedImage> elements, Rectangle cellSize, Theme theme, boolean inner)
 	{
-		BufferedImage result = assemblePart(elements, cellWidth, cellHeight, 1, theme);
+		BufferedImage result = assemblePart(elements, cellSize, 1, theme);
 		if(result == null) return new BufferedImage(1,1,BufferedImage.TYPE_INT_ARGB);
 		return result;
 	}
@@ -97,12 +99,13 @@ public class TreeAssemblingStrategy extends ListAssemblingStrategy
 	}
 	
 	@Override
-	public Rectangle preferredSize(int cellWidth, int cellHeight, int count, Theme theme, boolean inner)
+	public Rectangle preferredSize(Rectangle cellSize, int count, Theme theme, boolean inner)
 	{
 		if(count <= 1)return new Rectangle(1, 1);
 		int layers = numberOfLayers(count);
-		int width = widthOfBottom(count) * (cellWidth+2*theme.getExternalBorder(inner));
-		int height = layers * (cellHeight+2*theme.getExternalBorder(inner)) + Math.min(cellWidth, cellHeight)/2 * (layers-1);
+		int width = widthOfBottom(count) * (cellSize.width+2*theme.getExternalBorder(inner));
+		int height = layers * (cellSize.height+2*theme.getExternalBorder(inner));
+		height += Math.min(cellSize.width, cellSize.height)/2 * (layers-1);
 		return new Rectangle(width, height);
 	}
 	

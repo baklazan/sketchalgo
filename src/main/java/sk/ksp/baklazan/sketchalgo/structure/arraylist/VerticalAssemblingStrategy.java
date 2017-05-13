@@ -34,11 +34,11 @@ public class VerticalAssemblingStrategy extends ListAssemblingStrategy
 	}
 	
 	@Override
-	public BufferedImage assemble(ArrayList<BufferedImage> elements, int cellWidth, int cellHeight, Theme theme, boolean inner)
+	public BufferedImage assemble(ArrayList<BufferedImage> elements, Rectangle cellSize, Theme theme, boolean inner)
 	{
 		int border = theme.getExternalBorder(inner);
-		int width = cellWidth + 2*border;
-		int height = cellHeight * elements.size();
+		int width = cellSize.width + 2*border;
+		int height = cellSize.height * elements.size();
 		height += theme.internalBorder * Math.max(0,elements.size()-1);
 		height += 2*border;
 		height = Math.max(height, 1);
@@ -50,19 +50,19 @@ public class VerticalAssemblingStrategy extends ListAssemblingStrategy
 		for(int i=0; i<elements.size(); i++)
 		{
 			int x = border;
-			int y = (cellHeight + theme.internalBorder) * i + border;
-			graphics.fillRect(x, y, cellWidth, cellHeight);
+			int y = (cellSize.height + theme.internalBorder) * i + border;
+			graphics.fillRect(x, y, cellSize.width, cellSize.height);
 			graphics.drawImage(elements.get(i), x, y, null);
 		}
 		return result;
 	}
 	
 	@Override
-	public Rectangle preferredSize(int cellWidth, int cellHeight, int count, Theme theme, boolean inner)
+	public Rectangle preferredSize(Rectangle cellSize, int count, Theme theme, boolean inner)
 	{
 		int border = theme.getExternalBorder(inner);
-		int height = cellHeight * count + theme.internalBorder*(count-1) + 2*border;
-		int width = cellWidth + 2*border;
+		int height = cellSize.height * count + theme.internalBorder*(count-1) + 2*border;
+		int width = cellSize.width + 2*border;
 		return new Rectangle(width, height);
 	}
 	

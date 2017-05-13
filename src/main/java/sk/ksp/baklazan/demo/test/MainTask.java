@@ -1,5 +1,6 @@
 package sk.ksp.baklazan.demo.test;
 import sk.ksp.baklazan.sketchalgo.*;
+import sk.ksp.baklazan.sketchalgo.structure.SleepConstants;
 import sk.ksp.baklazan.sketchalgo.structure.arraylist.*;
 import javafx.concurrent.Task;
 import java.util.*;
@@ -153,12 +154,12 @@ public class MainTask extends Thread
 		ArrayList<ArrayList<Integer> > matrix1, matrix2, matrix3;
 		matrix1 = factory.createArrayList("matrix1", 
 		                                  true, 
-		                                  factory.createSleepConstants(0, 0, 0, VisualizableArrayList.SleepConstants.GetType.SILENT),
+		                                  factory.createSleepConstants(0, 0, 0, SleepConstants.GET_SILENT),
 		                                  null, 
 		                                  VerticalAssemblingStrategy.getInstance());
 		matrix2 = factory.createArrayList("matrix2", 
 		                                  true, 
-		                                  factory.createSleepConstants(0, 0, 0, VisualizableArrayList.SleepConstants.GetType.SILENT), 
+		                                  factory.createSleepConstants(0, 0, 0, SleepConstants.GET_SILENT), 
 		                                  factory.createHint(matrix1, LayoutHint.Direction.RIGHT),
 		                                  VerticalAssemblingStrategy.getInstance());
 		
@@ -184,7 +185,7 @@ public class MainTask extends Thread
 		}
 		matrix3 = factory.createArrayList("result", 
 		                                  true, 
-		                                  factory.createSleepConstants(0, 0, 0, VisualizableArrayList.SleepConstants.GetType.SILENT),
+		                                  factory.createSleepConstants(0, 0, 0, SleepConstants.GET_SILENT),
 		                                  factory.createHint(matrix2, LayoutHint.Direction.RIGHT),
 		                                  VerticalAssemblingStrategy.getInstance());
 		for(int i=0; i<n; i++)

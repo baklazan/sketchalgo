@@ -20,64 +20,20 @@ import javafx.application.*;
 
 public class VisualizableArrayList<E> extends ArrayList<E> implements VisualizableStructure, StructureDisplayer
 {
-	private int cellWidth, cellHeight;
-	private Theme theme;
-	private StructureDisplayer displayer;
+	/** Basic VisualizableStructure information*/
 	private String myName;
-	private ArrayList<Boolean> beingRead, beingWritten;
-	private SleepConstants sleepConstants;
-	private ListAssemblingStrategy assemblingStrategy;
+	private StructureDisplayer displayer;
 	private boolean inner;
 	
-	public static class SleepConstants
-	{
-		public static enum GetType {BATCH, INSTANT, SILENT}
-		private int sleepGet, sleepSet, sleepAdd;
-		private GetType getType;
-		public SleepConstants(int sleepAdd, int sleepGet, int sleepSet, GetType getType)
-		{
-			this.sleepGet = sleepGet;
-			this.sleepSet = sleepSet;
-			this.sleepAdd = sleepAdd;
-			this.getType = getType;
-		}
-	}
+	/** Strategies (for customization)*/
+	private SleepConstants sleepConstants;
+	private Theme theme;
+	private ListAssemblingStrategy assemblingStrategy;
 	
-	@Override
-	public void setInner(boolean inner)
-	{
-		this.inner = inner;
-	}
+	/** Internal stuff*/
+	private ArrayList<Boolean> beingRead, beingWritten;
 	
-	public void setTheme(Theme theme)
-	{
-		this.theme = theme;
-	}
-	
-	private int adjustDimension(int old, int requested)
-	{
-		if(old < requested) return Math.max((int)(old * 1.5), requested);
-		if(old > requested)
-		{
-			if(requested * 5 > old) return old;
-			return requested;
-		}
-		return old;
-	}
-	
-	private void enforceMinSize()
-	{
-		cellHeight = Math.max(cellHeight, theme.minCellHeight);
-		cellWidth = Math.max(cellWidth, theme.minCellWidth);
-	}
-	
-	private void requestRedrawAndDelay(int time)
-	{
-		if(displayer != null)
-		{
-			displayer.requestRedraw(this, time);
-		}
-	}
+	/** VisualizableStructure overridden methods*/
 	
 	@Override
 	public BufferedImage draw()
@@ -92,8 +48,8 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 		if(size.width <= 0) size.width = 1;
 		if(size.height <= 0) size.height = 1;
 		Rectangle cellSize = assemblingStrategy.cellSize(size, super.size(), theme, inner);
-		cellWidth = Math.max(cellSize.width, 1);
-		cellHeight = Math.max(cellSize.height, 1);
+		cellSize.width = Math.max(cellSize.width, 1);
+		cellSize.height = Math.max(cellSize.height, 1);
 		ArrayList<BufferedImage> childrenImage = new ArrayList<BufferedImage>();
 		for(int i=0; i<super.size(); i++)
 		{
@@ -116,9 +72,9 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 			childrenImage.set(i, image);
 		}
 		
-		BufferedImage result = assemblingStrategy.assemble(childrenImage, cellWidth, cellHeight, theme, inner);
+		BufferedImage result = assemblingStrategy.assemble(childrenImage, cellSize, theme, inner);
 		
-		if(sleepConstants.getType == SleepConstants.GetType.BATCH)
+		if(sleepConstants.getType == SleepConstants.GET_BATCH)
 		{
 			for(int i=0; i<beingRead.size(); i++)beingRead.set(i, false);
 		}
@@ -158,30 +114,91 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 			maxHeight = Math.max(maxHeight, (int)size.getHeight());
 		}
 		
-		cellWidth = maxWidth;
-		cellHeight = maxHeight;
-		enforceMinSize();
-		return assemblingStrategy.preferredSize(cellWidth, cellHeight, super.size(), theme, inner);
+		Rectangle cellSize = new Rectangle(maxWidth, maxHeight);
+		enforceMinSize(cellSize);
+		return assemblingStrategy.preferredSize(cellSize, super.size(), theme, inner);
 	}
 	
-	private void init(String name)
+	@Override
+	public void setDisplayer(StructureDisplayer displayer)
 	{
-		cellWidth = 0;
-		cellHeight = 0;
-		displayer = null;
-		beingRead = new ArrayList<Boolean>();
-		beingWritten = new ArrayList<Boolean>();
-		myName = name;
-		sleepConstants = new SleepConstants(0, 100, 300, SleepConstants.GetType.INSTANT);
-		assemblingStrategy = HorizontalAssemblingStrategy.getInstance();
-		theme = new DefaultTheme();
-		inner = false;
+		this.displayer = displayer;
+		if(this.displayer != null)
+		{
+			this.displayer.requestRedraw(this, 0);
+		}
 	}
 	
-	public void setSleepConstants(SleepConstants sleepConstants)
+	@Override
+	public void setInner(boolean inner)
 	{
-		this.sleepConstants = sleepConstants;
+		this.inner = inner;
 	}
+	
+	/** StructureDislplayer overriden methods*/
+	
+	@Override
+	public void requestRedraw(VisualizableStructure caller, int delay)
+	{
+		if(displayer != null) displayer.requestRedraw(this, delay);
+	}
+	
+	/** ArrayList[E] overriden methods */
+	
+	@Override
+	public boolean add(E e)
+	{
+		super.add(e);
+		setToInner(e);
+		beingRead.add(false);
+		beingWritten.add(false);
+		ensureCompatibleStrategy(e);
+		requestRedrawAndDelay(sleepConstants.sleepAdd);
+		register(e);
+		return true;
+	}
+	
+	@Override
+	public E get(int index)
+	{
+		switch(sleepConstants.getType)
+		{
+			case SleepConstants.GET_INSTANT:
+			{
+				beingRead.set(index, true);
+				requestRedrawAndDelay(sleepConstants.sleepGet);
+				beingRead.set(index, false);
+				requestRedrawAndDelay(0);
+			}
+			case SleepConstants.GET_BATCH:
+			{
+				beingRead.set(index, true);
+				break;
+			}
+			case SleepConstants.GET_SILENT:
+			{
+				break;
+			}
+		}
+		return super.get(index);
+	}
+	
+	@Override
+	public E set(int index, E element)
+	{
+		
+		beingWritten.set(index, true);
+		requestRedrawAndDelay(sleepConstants.sleepSet / 2);
+		E result = super.set(index, element);
+		ensureCompatibleStrategy(element);
+		requestRedrawAndDelay(sleepConstants.sleepSet / 2);
+		beingWritten.set(index, false);
+		requestRedrawAndDelay(0);
+		register(element);
+		return result;
+	}
+	
+	/** Constructors and related methods*/
 	
 	public VisualizableArrayList()
 	{
@@ -194,6 +211,29 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 		init(name);
 	}
 	
+	private void init(String name)
+	{
+		displayer = null;
+		beingRead = new ArrayList<Boolean>();
+		beingWritten = new ArrayList<Boolean>();
+		myName = name;
+		sleepConstants = new SleepConstants(0, 100, 0, 300, SleepConstants.GET_INSTANT);
+		assemblingStrategy = HorizontalAssemblingStrategy.getInstance();
+		theme = new DefaultTheme();
+		inner = false;
+	}
+	
+	/** public setters */
+	
+	public void setTheme(Theme theme)
+	{
+		this.theme = theme;
+	}
+	
+	public void setSleepConstants(SleepConstants sleepConstants)
+	{
+		this.sleepConstants = sleepConstants;
+	}
 	
 	public void setAssemblingStrategy(ListAssemblingStrategy strategy)
 	{
@@ -201,6 +241,22 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 		for(int i=0; i<super.size(); i++)
 		{
 			ensureCompatibleStrategy(super.get(i));
+		}
+	}
+	
+	/** misc private methods */
+	
+	private void enforceMinSize(Rectangle rect)
+	{
+		rect.height = Math.max(rect.height, theme.minCellHeight);
+		rect.width = Math.max(rect.width, theme.minCellWidth);
+	}
+	
+	private void requestRedrawAndDelay(int time)
+	{
+		if(displayer != null)
+		{
+			displayer.requestRedraw(this, time);
 		}
 	}
 	
@@ -229,21 +285,6 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 		}
 	}
 	
-	@Override
-	public E set(int index, E element)
-	{
-		
-		beingWritten.set(index, true);
-		requestRedrawAndDelay(sleepConstants.sleepSet / 2);
-		E result = super.set(index, element);
-		ensureCompatibleStrategy(element);
-		requestRedrawAndDelay(sleepConstants.sleepSet / 2);
-		beingWritten.set(index, false);
-		requestRedrawAndDelay(0);
-		register(element);
-		return result;
-	}
-	
 	private void setToInner(Object o)
 	{
 		if(o instanceof VisualizableStructure)
@@ -252,59 +293,4 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 		}
 	}
 	
-	@Override
-	public boolean add(E e)
-	{
-		super.add(e);
-		setToInner(e);
-		beingRead.add(false);
-		beingWritten.add(false);
-		ensureCompatibleStrategy(e);
-		requestRedrawAndDelay(sleepConstants.sleepAdd);
-		register(e);
-		return true;
-	}
-	
-	@Override
-	public E get(int index)
-	{
-		switch(sleepConstants.getType)
-		{
-			case INSTANT:
-			{
-				beingRead.set(index, true);
-				requestRedrawAndDelay(sleepConstants.sleepGet);
-				beingRead.set(index, false);
-				requestRedrawAndDelay(0);
-			}
-			case BATCH:
-			{
-				beingRead.set(index, true);
-				break;
-			}
-			case SILENT:
-			{
-				break;
-			}
-		}
-		return super.get(index);
-	}
-	
-	@Override
-	public void setDisplayer(StructureDisplayer displayer)
-	{
-		this.displayer = displayer;
-		if(this.displayer != null)
-		{
-			this.displayer.requestRedraw(this, 0);
-		}
-	}
-	
-	@Override
-	public void requestRedraw(VisualizableStructure caller, int delay)
-	{
-		if(displayer != null) displayer.requestRedraw(this, delay);
-	}
-	
-
 }
