@@ -43,23 +43,20 @@ public class MainTask extends Thread
 	
 	ArrayList<Integer> encode(ArrayList<Integer> word)
 	{
-		visualizer.setAlgorithmState("Encoding word");
-		ArrayList<Integer> codeword = factory.createArrayList("codeword", true, factory.createSleepConstants(0, 0, 1000, true));
+		ArrayList<Integer> codeword = factory.createArrayList("codeword", true, factory.createSleepConstants(0, 0, 2000, true));
 		int n = 1, k = 1;
 		while(n < word.size())
 		{
 			n = n*2+1;
 			k++;
 		}
-		
-		System.out.println(k);
+		visualizer.setAlgorithmState("Encoding word: copying information bits");
 		int wind = 0;
 		for(int i=1; i<=word.size() + k; i++)
 		{
 			if(isPowerOfTwo(i)) codeword.add(-1);
 			else 
 			{
-				System.out.println(i);
 				codeword.add(word.get(wind));
 				wind++;
 			}
@@ -68,6 +65,7 @@ public class MainTask extends Thread
 		int parityBit = 1;
 		for(int i=0; i<k; i++)
 		{
+			visualizer.setAlgorithmState("Encoding word: computing parity bit " + parityBit);
 			int sum = 1;
 			for(int j=parityBit; j<=codeword.size(); j+= parityBit*2)
 			{
@@ -87,17 +85,16 @@ public class MainTask extends Thread
 	{
 		visualizer.setAlgorithmState("Inducing an error");
 		
-		System.out.println("error at: " + ind);
 		codeword.set(ind, 1-codeword.get(ind));
 	}
 	
 	ArrayList<Integer> decode(ArrayList<Integer> codeword)
 	{
-		visualizer.setAlgorithmState("Decoding");
 		ArrayList<Integer> syndrome = 
 		  factory.createArrayList("error syndrome (reversed)", true, factory.createSleepConstants(1600,0,0, true));
 		for(int parityBit = 1; parityBit <= codeword.size(); parityBit *= 2)
 		{
+			visualizer.setAlgorithmState("Decoding: controlling parity bit " + parityBit);
 			int sum = 0;
 			for(int i = parityBit; i <= codeword.size(); i += 2*parityBit)
 			{
@@ -109,21 +106,25 @@ public class MainTask extends Thread
 			}
 			syndrome.add(sum);
 		}
+		visualizer.setAlgorithmState("Decoding: repairing error");
 		int errorIndex = 0;
 		for(int i=syndrome.size()-1; i>=0; i--)
 		{
 			errorIndex *= 2;
 			errorIndex += syndrome.get(i);
 		}
-		System.out.println("Found error at: " + (errorIndex -1));
 		if(errorIndex > 0)
 		{
 			codeword.set(errorIndex-1, 1-codeword.get(errorIndex-1));
 		}
-		
+		else
+		{
+			visualizer.setAlgorithmState("Decoding: threre was no error");
+		}
 		visualizer.unregister(syndrome);
 		
 		ArrayList<Integer> result = factory.createArrayList("decoded word", true, factory.createSleepConstants(200, 0, 0, false));
+		visualizer.setAlgorithmState("Decoding: copying information bits");
 		for(int i=1; i<=codeword.size(); i++)
 		{
 			if(!isPowerOfTwo(i)) result.add(codeword.get(i-1));

@@ -1,8 +1,11 @@
 package sk.ksp.baklazan.sketchalgo.structure.arraylist;
 import sk.ksp.baklazan.sketchalgo.structure.*;
+import sk.ksp.baklazan.sketchalgo.Theme;
+import sk.ksp.baklazan.sketchalgo.DefaultTheme;
 import java.util.*;
 import java.lang.*;
 import java.awt.image.*;
+import java.awt.Rectangle;
 import java.awt.Graphics2D;
 import java.awt.Graphics;
 import java.awt.geom.*;
@@ -18,25 +21,38 @@ import javafx.application.*;
 public class VisualizableArrayList<E> extends ArrayList<E> implements VisualizableStructure, StructureDisplayer
 {
 	private int cellWidth, cellHeight;
+	private Theme theme;
 	private StructureDisplayer displayer;
 	private String myName;
 	private ArrayList<Boolean> beingRead, beingWritten;
 	private SleepConstants sleepConstants;
 	private ListAssemblingStrategy assemblingStrategy;
+	private boolean inner;
 	
 	public static class SleepConstants
 	{
+		public static enum GetType {BATCH, INSTANT, SILENT}
 		private int sleepGet, sleepSet, sleepAdd;
-		private boolean batchGet;
-		public SleepConstants(int sleepAdd, int sleepGet, int sleepSet, boolean batchGet)
+		private GetType getType;
+		public SleepConstants(int sleepAdd, int sleepGet, int sleepSet, GetType getType)
 		{
 			this.sleepGet = sleepGet;
 			this.sleepSet = sleepSet;
 			this.sleepAdd = sleepAdd;
-			this.batchGet = batchGet;
+			this.getType = getType;
 		}
 	}
 	
+	@Override
+	public void setInner(boolean inner)
+	{
+		this.inner = inner;
+	}
+	
+	public void setTheme(Theme theme)
+	{
+		this.theme = theme;
+	}
 	
 	private int adjustDimension(int old, int requested)
 	{
@@ -51,88 +67,101 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 	
 	private void enforceMinSize()
 	{
-		cellHeight = Math.max(cellHeight, 20);
-		cellWidth = Math.max(cellWidth, 20);
+		cellHeight = Math.max(cellHeight, theme.minCellHeight);
+		cellWidth = Math.max(cellWidth, theme.minCellWidth);
 	}
 	
 	private void requestRedrawAndDelay(int time)
 	{
 		if(displayer != null)
 		{
-			displayer.requestRedraw(this);
-			if(time > 0)
-			{
-				try
-				{
-					Thread.sleep(time);
-				}
-				catch(Exception e)
-				{
-				}
-			}
+			displayer.requestRedraw(this, time);
 		}
 	}
-	
-	
 	
 	@Override
 	public BufferedImage draw()
 	{
+		return draw(null);
+	}
+	
+	@Override
+	public BufferedImage draw(Rectangle size)
+	{
+		if(size == null) size = preferredSize();
+		if(size.width <= 0) size.width = 1;
+		if(size.height <= 0) size.height = 1;
+		Rectangle cellSize = assemblingStrategy.cellSize(size, super.size(), theme, inner);
+		cellWidth = Math.max(cellSize.width, 1);
+		cellHeight = Math.max(cellSize.height, 1);
 		ArrayList<BufferedImage> childrenImage = new ArrayList<BufferedImage>();
-		int maxWidth = 0, maxHeight = 0;
 		for(int i=0; i<super.size(); i++)
 		{
-			BufferedImage image = ObjectDrawer.draw(super.get(i));
+			BufferedImage image = ObjectDrawer.draw(super.get(i), theme, cellSize);
 			childrenImage.add(image);
-			maxWidth = Math.max(maxWidth, image.getWidth());
-			maxHeight = Math.max(maxHeight, image.getHeight());
 		}
 		
-		cellWidth = maxWidth;//adjustDimension(cellWidth, maxWidth);
-		cellHeight = maxHeight;//adjustDimension(cellHeight, maxHeight);
-		enforceMinSize();
 		
 		for(int i=0; i<super.size(); i++)
 		{
-			BufferedImage resized = new BufferedImage(cellWidth, cellHeight, BufferedImage.TYPE_INT_ARGB);
-			Graphics2D graphics = resized.createGraphics();
 			BufferedImage image = childrenImage.get(i);
-			graphics.drawImage(image, (cellWidth - image.getWidth())/2, (cellHeight - image.getHeight())/2, null);
-			
-			if(beingWritten.get(i) || beingRead.get(i))
+			if(beingWritten.get(i))
 			{
-				BufferedImage screen = new BufferedImage(cellWidth, cellHeight, BufferedImage.TYPE_INT_ARGB);
-				Graphics2D gr = screen.createGraphics();
-				if(beingRead.get(i))gr.setColor(new Color(0, 200, 0, 100));
-				if(beingWritten.get(i))gr.setColor(new Color(255, 128, 0, 100));
-				gr.fillRect(0,0, screen.getWidth(), screen.getHeight());
-				graphics.drawImage(screen, 0, 0, null);
+				image = theme.drawSet(image);
 			}
-			childrenImage.set(i, resized);
+			else if(beingRead.get(i))
+			{
+				image = theme.drawGet(image);
+			}
+			childrenImage.set(i, image);
 		}
 		
-		BufferedImage result = assemblingStrategy.assemble(childrenImage, cellWidth, cellHeight);
+		BufferedImage result = assemblingStrategy.assemble(childrenImage, cellWidth, cellHeight, theme, inner);
 		
-		if(sleepConstants.batchGet)
+		if(sleepConstants.getType == SleepConstants.GetType.BATCH)
 		{
 			for(int i=0; i<beingRead.size(); i++)beingRead.set(i, false);
 		}
 		
+		if(result.getWidth() > size.width || result.getHeight() > size.height)
+		{
+			BufferedImage croppedResult = new BufferedImage(size.width, size.height, BufferedImage.TYPE_INT_ARGB);
+			Graphics2D crGr = croppedResult.createGraphics();
+			crGr.drawImage(result, 0, 0, null);
+			result = croppedResult;
+		}
 		if(myName != null)
 		{
 			Graphics2D graphics = result.createGraphics();
 			FontMetrics metrics = graphics.getFontMetrics();
 			Rectangle2D rect = metrics.getStringBounds(myName, graphics);
-			int height = result.getHeight() + (int)rect.getHeight()+4;
-			int width = Math.max(result.getWidth(), (int)rect.getWidth()+4);
+			int height = result.getHeight() + (int)rect.getHeight()+2*theme.textMargin;
+			int width = Math.max(result.getWidth(), (int)rect.getWidth()+2*theme.textMargin);
 			BufferedImage captionedResult = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 			graphics = captionedResult.createGraphics();
-			graphics.setColor(Color.BLACK);
-			graphics.drawString(myName, (int)(-rect.getX())+2, (int)(-rect.getY())+2);
-			graphics.drawImage(result, 0, (int)rect.getHeight()+4, null);
+			graphics.setColor(theme.textColor);
+			graphics.drawString(myName, (int)(-rect.getX())+theme.textMargin, (int)(-rect.getY())+theme.textMargin);
+			graphics.drawImage(result, 0, (int)rect.getHeight()+2*theme.textMargin, null);
 			return captionedResult;
 		}
 		return result;
+	}
+	
+	@Override
+	public Rectangle preferredSize()
+	{
+		int maxWidth = 0, maxHeight = 0;
+		for(int i=0; i<super.size(); i++)
+		{
+			Rectangle size = ObjectDrawer.preferredSize(super.get(i), theme);
+			maxWidth = Math.max(maxWidth, (int)size.getWidth());
+			maxHeight = Math.max(maxHeight, (int)size.getHeight());
+		}
+		
+		cellWidth = maxWidth;
+		cellHeight = maxHeight;
+		enforceMinSize();
+		return assemblingStrategy.preferredSize(cellWidth, cellHeight, super.size(), theme, inner);
 	}
 	
 	private void init(String name)
@@ -143,8 +172,10 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 		beingRead = new ArrayList<Boolean>();
 		beingWritten = new ArrayList<Boolean>();
 		myName = name;
-		sleepConstants = new SleepConstants(0, 100, 300, false);
+		sleepConstants = new SleepConstants(0, 100, 300, SleepConstants.GetType.INSTANT);
 		assemblingStrategy = HorizontalAssemblingStrategy.getInstance();
+		theme = new DefaultTheme();
+		inner = false;
 	}
 	
 	public void setSleepConstants(SleepConstants sleepConstants)
@@ -213,10 +244,19 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 		return result;
 	}
 	
+	private void setToInner(Object o)
+	{
+		if(o instanceof VisualizableStructure)
+		{
+			((VisualizableStructure)(o)).setInner(true);
+		}
+	}
+	
 	@Override
 	public boolean add(E e)
 	{
 		super.add(e);
+		setToInner(e);
 		beingRead.add(false);
 		beingWritten.add(false);
 		ensureCompatibleStrategy(e);
@@ -228,12 +268,24 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 	@Override
 	public E get(int index)
 	{
-		beingRead.set(index, true);
-		if(!sleepConstants.batchGet)
+		switch(sleepConstants.getType)
 		{
-			requestRedrawAndDelay(sleepConstants.sleepGet);
-			beingRead.set(index, false);
-			requestRedrawAndDelay(0);
+			case INSTANT:
+			{
+				beingRead.set(index, true);
+				requestRedrawAndDelay(sleepConstants.sleepGet);
+				beingRead.set(index, false);
+				requestRedrawAndDelay(0);
+			}
+			case BATCH:
+			{
+				beingRead.set(index, true);
+				break;
+			}
+			case SILENT:
+			{
+				break;
+			}
 		}
 		return super.get(index);
 	}
@@ -244,20 +296,15 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 		this.displayer = displayer;
 		if(this.displayer != null)
 		{
-			this.displayer.requestRedraw(this);
+			this.displayer.requestRedraw(this, 0);
 		}
 	}
 	
 	@Override
-	public void requestRedraw(VisualizableStructure caller)
+	public void requestRedraw(VisualizableStructure caller, int delay)
 	{
-		if(displayer != null) displayer.requestRedraw(this);
+		if(displayer != null) displayer.requestRedraw(this, delay);
 	}
 	
-	
-	@Override
-	public void requestResizeRedraw(VisualizableStructure caller)
-	{
-		if(displayer != null) displayer.requestResizeRedraw(this);
-	}
+
 }

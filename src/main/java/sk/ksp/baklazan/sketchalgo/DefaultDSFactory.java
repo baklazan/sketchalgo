@@ -7,40 +7,52 @@ import java.lang.*;
 
 public class DefaultDSFactory extends DSFactory
 {
-	public DefaultDSFactory(AlgorithmWatcher watcher)
+	Theme theme;
+	
+	public DefaultDSFactory(AlgorithmWatcher watcher, Theme theme)
 	{
 		super(watcher);
+		this.theme = theme;
 	}
 	
 	public <E> ArrayList<E> createArrayList(boolean registered)
 	{
-		return createArrayList(null, registered, null, null);
+		return createArrayList(null, registered, null, null, null);
 	}
 	
 	public <E> ArrayList<E> createArrayList(String name, boolean registered)
 	{
-		return createArrayList(name, registered, null, null);
+		return createArrayList(name, registered, null, null, null);
 	}
 	
 	public <E> ArrayList<E> createArrayList(String name)
 	{
-		return createArrayList(name, true, null, null);
+		return createArrayList(name, true, null, null, null);
 	}
 	
 	public <E> ArrayList<E> createArrayList(String name, LayoutHint hint)
 	{
-		return createArrayList(name, true, null, hint);
+		return createArrayList(name, true, null, hint, null);
 	}
 	
 	public <E> ArrayList<E> createArrayList(String name, boolean registered, VisualizableArrayList.SleepConstants sleepConstants)
 	{
-		return createArrayList(name, registered, sleepConstants, null);
+		return createArrayList(name, registered, sleepConstants, null, null);
+	}
+	
+	public <E> ArrayList<E> createArrayList(String name, 
+	                                        boolean registered,
+	                                        VisualizableArrayList.SleepConstants sleepConstants, 
+	                                        LayoutHint hint)
+	{
+		return createArrayList(name, registered, sleepConstants, hint, null);
 	}
 	
 	public <E> ArrayList<E> createArrayList(String name, 
 	                                        boolean registered, 
 	                                        VisualizableArrayList.SleepConstants sleepConstants,
-	                                        LayoutHint hint)
+	                                        LayoutHint hint,
+	                                        ListAssemblingStrategy assemblingStrategy)
 	{
 		VisualizableArrayList<E> result = new VisualizableArrayList<E>(name);
 		if(registered)
@@ -59,12 +71,34 @@ public class DefaultDSFactory extends DSFactory
 		{
 			result.setSleepConstants(sleepConstants);
 		}
+		if(assemblingStrategy != null)
+		{
+			result.setAssemblingStrategy(assemblingStrategy);
+		}
+		result.setTheme(theme);
 		return result;
 	}
 	
 	public VisualizableArrayList.SleepConstants createSleepConstants(int sleepAdd, int sleepGet, int sleepSet, boolean batchGet)
 	{
-		return new VisualizableArrayList.SleepConstants(sleepAdd, sleepGet, sleepSet, batchGet);
+		VisualizableArrayList.SleepConstants.GetType getType;
+		if(batchGet)
+		{
+			getType = VisualizableArrayList.SleepConstants.GetType.BATCH;
+		}
+		else
+		{
+			getType = VisualizableArrayList.SleepConstants.GetType.INSTANT;
+		}
+		return createSleepConstants(sleepAdd, sleepGet, sleepSet, getType);
+	}
+	
+	public VisualizableArrayList.SleepConstants createSleepConstants(int sleepAdd, 
+	                                                                 int sleepGet, 
+	                                                                 int sleepSet, 
+	                                                                 VisualizableArrayList.SleepConstants.GetType getType)
+	{
+		return new VisualizableArrayList.SleepConstants(sleepAdd, sleepGet, sleepSet, getType);
 	}
 	
 	public <K, V> TreeMap<K, V> createTreeMap(String name)
@@ -90,6 +124,7 @@ public class DefaultDSFactory extends DSFactory
 			result.setDisplayer(watcher);
 			watcher.register(result);
 		}
+		result.setTheme(theme);
 		return result;
 	}
 	

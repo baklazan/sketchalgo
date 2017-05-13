@@ -15,13 +15,14 @@ import javafx.scene.paint.*;
 import javafx.application.*;
 import javafx.embed.swing.*;
 
-public class Visualizer implements AlgorithmWatcher, Painter
+public class Visualizer implements AlgorithmWatcher
 {
 	private DefaultDSFactory factory;
 	private Canvas canvas;
 	private ArrayList<WeakReference<VisualizableStructure> > structures;
 	private Map<VisualizableStructure, LayoutHint> hints;
 	private String algorithmState;
+	private Theme theme;
 	
 	@Override
 	public DefaultDSFactory getFactory()
@@ -29,14 +30,24 @@ public class Visualizer implements AlgorithmWatcher, Painter
 		return factory;
 	}
 	
-	
 	public Visualizer(Canvas canvas)
 	{
-		factory = new DefaultDSFactory(this);
+		this(canvas, new DefaultTheme());
+	}
+	
+	public Theme getTheme()
+	{
+		return theme;
+	}
+	
+	public Visualizer(Canvas canvas, Theme theme)
+	{
+		factory = new DefaultDSFactory(this, theme);
 		this.canvas = canvas;
 		structures = new ArrayList<WeakReference<VisualizableStructure> >();
 		hints = new IdentityHashMap<VisualizableStructure, LayoutHint>();
 		algorithmState = null;
+		this.theme = theme;
 	}
 	
 	@Override
@@ -137,10 +148,19 @@ public class Visualizer implements AlgorithmWatcher, Painter
 	}
 	
 	@Override
-	public void requestRedraw(VisualizableStructure caller)
+	public void requestRedraw(VisualizableStructure caller, int delay)
 	{
 		redraw();
+		if(delay > 0)
+		{
+			try
+			{
+				Thread.sleep(delay);
+			}
+			catch(Exception e)
+			{
+			}
+		}
 	}
-	@Override
-	public void requestResizeRedraw(VisualizableStructure caller){}
+	
 }
