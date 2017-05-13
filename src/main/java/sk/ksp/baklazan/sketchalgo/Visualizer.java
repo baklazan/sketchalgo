@@ -7,7 +7,6 @@ import java.awt.image.*;
 import java.awt.Font;
 import java.awt.geom.*;
 import java.awt.Graphics2D;
-import java.awt.Graphics;
 import java.awt.color.*;
 import java.awt.Rectangle;
 import javafx.scene.canvas.*;
