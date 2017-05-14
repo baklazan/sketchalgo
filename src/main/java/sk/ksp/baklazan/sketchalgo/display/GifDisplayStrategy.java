@@ -21,6 +21,7 @@ public class GifDisplayStrategy implements DisplayStrategy
 	ImageWriter writer;
 	IIOMetadata metaData;
 	ImageWriteParam writeParam;
+	ImageTypeSpecifier imageType;
 	BufferedImage lastFrame;
 	Rectangle size;
 	FileImageOutputStream output;
@@ -32,7 +33,7 @@ public class GifDisplayStrategy implements DisplayStrategy
 		Iterator<ImageWriter> iterator = ImageIO.getImageWritersByFormatName("GIF");
 		writer = iterator.next();
 		
-		ImageTypeSpecifier imageType = ImageTypeSpecifier.createFromBufferedImageType(BufferedImage.TYPE_INT_ARGB);
+		imageType = ImageTypeSpecifier.createFromBufferedImageType(BufferedImage.TYPE_INT_ARGB);
 		writeParam = writer.getDefaultWriteParam();
 		metaData = writer.getDefaultImageMetadata(imageType, writeParam);
 		output = new FileImageOutputStream(file);
@@ -47,6 +48,42 @@ public class GifDisplayStrategy implements DisplayStrategy
 		return size;
 	}
 	
+	
+	/* This part is heavily inspired by this class:
+	 * http://elliot.kroo.net/software/java/GifSequenceWriter/GifSequenceWriter.java
+	 */
+	
+	private IIOMetadataNode getNode(IIOMetadataNode parent, String sonName)
+	{
+		int numberOfChildren = parent.getLength();
+		for(int i=0; i<numberOfChildren; i++)
+		{
+			IIOMetadataNode child = (IIOMetadataNode)parent.item(i);
+			if(child.getNodeName().compareToIgnoreCase(sonName) == 0)
+			{
+				return child;
+			}
+		}
+		IIOMetadataNode result = new IIOMetadataNode(sonName);
+		parent.appendChild(result);
+		return result;
+	}
+	
+	private void debug(IIOMetadataNode root)
+	{
+		int length = root.getLength();
+		System.err.println(root.getNodeName());
+		System.err.println("has " + length + " children:");
+		for(int i=0; i<length; i++)
+		{
+			debug((IIOMetadataNode)(root.item(i)));
+		}
+		if(root.getNodeName().equals("ImageDescriptor"))
+		{
+			System.err.println("imageLeftPosition = " + root.getAttribute("imageLeftPosition"));
+		}
+	}
+	
 	@Override 
 	public void addFrame(BufferedImage image, int time)
 	{
@@ -54,6 +91,11 @@ public class GifDisplayStrategy implements DisplayStrategy
 		{
 			try
 			{
+				String formatName = metaData.getNativeMetadataFormatName();
+				IIOMetadataNode root = (IIOMetadataNode)(metaData.getAsTree(formatName));
+				IIOMetadataNode controlExtension = getNode(root, "GraphicControlExtension");
+				controlExtension.setAttribute("delayTime", Integer.toString(time/10));
+				metaData.setFromTree(formatName, root);
 				writer.writeToSequence(new IIOImage(image, null, metaData), writeParam);
 			}
 			catch (Exception e)

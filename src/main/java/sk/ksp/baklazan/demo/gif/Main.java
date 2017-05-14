@@ -22,12 +22,12 @@ public class Main
 		ArrayList<ArrayList<Integer> > matrix1, matrix2, matrix3;
 		matrix1 = factory.createArrayList("matrix1", 
 		                                  true, 
-		                                  factory.createSleepConstants(0, 0, 0, SleepConstants.GET_SILENT),
+		                                  factory.createSleepConstants(300, 0, 0, SleepConstants.GET_SILENT),
 		                                  null, 
 		                                  VerticalAssemblingStrategy.getInstance());
 		matrix2 = factory.createArrayList("matrix2", 
 		                                  true, 
-		                                  factory.createSleepConstants(0, 0, 0, SleepConstants.GET_SILENT), 
+		                                  factory.createSleepConstants(300, 0, 0, SleepConstants.GET_SILENT), 
 		                                  factory.createHint(matrix1, LayoutHint.Direction.RIGHT),
 		                                  VerticalAssemblingStrategy.getInstance());
 		
@@ -58,7 +58,7 @@ public class Main
 		                                  VerticalAssemblingStrategy.getInstance());
 		for(int i=0; i<n; i++)
 		{
-			ArrayList<Integer> row = factory.createArrayList(null, false, factory.createSleepConstants(0, 0, 1200, true));
+			ArrayList<Integer> row = factory.createArrayList(null, false, factory.createSleepConstants(0, 0, 3000, true));
 			for(int j=0; j<n; j++)
 			{
 				row.add(0);
