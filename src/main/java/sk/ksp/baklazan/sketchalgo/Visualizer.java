@@ -9,9 +9,9 @@ import java.awt.Font;
 import java.awt.geom.*;
 import java.awt.Graphics2D;
 import java.awt.color.*;
+import java.awt.Color;
 import java.awt.Rectangle;
 import javafx.scene.canvas.*;
-import javafx.scene.paint.*;
 import javafx.application.*;
 import javafx.embed.swing.*;
 
@@ -89,6 +89,8 @@ public class Visualizer implements AlgorithmWatcher
 		Rectangle size = displayStrategy.getSize();
 		BufferedImage surface = new BufferedImage(size.width, size.height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D graphics = surface.createGraphics();
+		graphics.setColor(Color.WHITE);
+		graphics.fillRect(0,0,surface.getWidth(), surface.getHeight());
 		
 		Map<Object, Rectangle> place = new IdentityHashMap<Object, Rectangle>();
 		int maxY = 0;
