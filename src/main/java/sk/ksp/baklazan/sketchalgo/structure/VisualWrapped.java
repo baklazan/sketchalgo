@@ -54,6 +54,11 @@ public class VisualWrapped<T> extends Wrapped<T> implements VisualizableStructur
 		{
 			image = theme.drawGet(image);
 		}
+		if(myName != null && !inner)
+		{
+			image = ObjectDrawer.addCaption(image, myName, theme);
+		}
+		if(sleepConstants.getType == SleepConstants.GET_BATCH) beingRead = false;
 		return image;
 	}
 	
@@ -102,6 +107,11 @@ public class VisualWrapped<T> extends Wrapped<T> implements VisualizableStructur
 				requestRedrawAndDelay(sleepConstants.sleepGet);
 				beingRead = false;
 				requestRedrawAndDelay(0);
+				break;
+			}
+			case SleepConstants.GET_BATCH:
+			{
+				beingRead = true;
 				break;
 			}
 			case SleepConstants.GET_SILENT:

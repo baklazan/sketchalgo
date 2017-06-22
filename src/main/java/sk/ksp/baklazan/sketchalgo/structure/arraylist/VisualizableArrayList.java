@@ -83,19 +83,9 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 			crGr.drawImage(result, 0, 0, null);
 			result = croppedResult;
 		}
-		if(myName != null)
+		if(myName != null && !inner)
 		{
-			Graphics2D graphics = result.createGraphics();
-			FontMetrics metrics = graphics.getFontMetrics();
-			Rectangle2D rect = metrics.getStringBounds(myName, graphics);
-			int height = result.getHeight() + (int)rect.getHeight()+2*theme.textMargin;
-			int width = Math.max(result.getWidth(), (int)rect.getWidth()+2*theme.textMargin);
-			BufferedImage captionedResult = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-			graphics = captionedResult.createGraphics();
-			graphics.setColor(theme.textColor);
-			graphics.drawString(myName, (int)(-rect.getX())+theme.textMargin, (int)(-rect.getY())+theme.textMargin);
-			graphics.drawImage(result, 0, (int)rect.getHeight()+2*theme.textMargin, null);
-			return captionedResult;
+			result = ObjectDrawer.addCaption(result, myName, theme);
 		}
 		return result;
 	}

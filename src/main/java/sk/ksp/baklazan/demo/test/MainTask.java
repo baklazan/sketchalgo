@@ -140,11 +140,11 @@ public class MainTask extends Thread
 	@Override
 	public void run()
 	{
-		Wrapped<Integer> n = factory.wrap(-1, "N", true);
+		visualizer.setAlgorithmState("Loading matrices");
+		SleepConstants sc = factory.createSleepConstants(0, 10, 2000, SleepConstants.GET_SILENT);
+		Wrapped<Integer> n = factory.wrap(-1, "N", true, sc);
 		Scanner in = new Scanner(System.in);
 		n.set(in.nextInt());
-		visualizer.setAlgorithmState("Loading matrices");
-		
 		ArrayList<ArrayList<Integer> > matrix1, matrix2, matrix3;
 		matrix1 = factory.createArrayList("matrix1", 
 		                                  true, 
@@ -177,6 +177,7 @@ public class MainTask extends Thread
 			}
 			matrix2.add(row);
 		}
+		sc.getType = SleepConstants.GET_BATCH;
 		matrix3 = factory.createArrayList("result", 
 		                                  true, 
 		                                  factory.createSleepConstants(0, 0, 0, SleepConstants.GET_SILENT),

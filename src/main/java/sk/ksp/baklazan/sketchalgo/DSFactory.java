@@ -1,5 +1,6 @@
 package sk.ksp.baklazan.sketchalgo;
 import sk.ksp.baklazan.sketchalgo.structure.Wrapped;
+import sk.ksp.baklazan.sketchalgo.structure.SleepConstants;
 
 /** Factory creating data structures associated with algorithm watcher*/
 public abstract class DSFactory
@@ -30,5 +31,10 @@ public abstract class DSFactory
 		return wrap(t, null, register);
 	}
 	
-	public abstract <T> Wrapped<T> wrap(T t, String name, boolean register);
+	public <T> Wrapped<T> wrap(T t, String name, boolean register)
+	{
+		return wrap(t, name, register, null);
+	}
+	
+	public abstract <T> Wrapped<T> wrap(T t, String name, boolean register, SleepConstants sleepConstants);
 }

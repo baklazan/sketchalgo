@@ -161,10 +161,14 @@ public class DefaultDSFactory extends DSFactory
 	}
 	
 	@Override
-	public <T> Wrapped<T> wrap(T t, String name, boolean register)
+	public <T> Wrapped<T> wrap(T t, String name, boolean register, SleepConstants sleepConstants)
 	{
 		VisualWrapped<T> result = new VisualWrapped<T>(t, name);
 		result.setTheme(theme);
+		if(sleepConstants != null)
+		{
+			result.setSleepConstants(sleepConstants);
+		}
 		if(register)
 		{
 			result.setDisplayer(watcher);
@@ -185,8 +189,17 @@ public class DefaultDSFactory extends DSFactory
 	
 	public <T extends BinaryNode> Wrapped<T> wrapBinaryNode(T t, String name, boolean register)
 	{
+		return wrapBinaryNode(t, name, register, null);
+	}
+	
+	public <T extends BinaryNode> Wrapped<T> wrapBinaryNode(T t, String name, boolean register, SleepConstants sleepConstants)
+	{
 		WrappedBinaryNode<T> result = new WrappedBinaryNode<T>(t, name);
 		result.setTheme(theme);
+		if(sleepConstants != null)
+		{
+			result.setSleepConstants(sleepConstants);
+		}
 		if(register)
 		{
 			result.setDisplayer(watcher);

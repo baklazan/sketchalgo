@@ -71,4 +71,19 @@ public class ObjectDrawer
 			return new Rectangle((int)rect.getWidth()+2*theme.textMargin, (int)rect.getHeight()+2*theme.textMargin);
 		}
 	}
+	
+	public static BufferedImage addCaption(BufferedImage image, String caption, Theme theme)
+	{
+		Graphics2D graphics = image.createGraphics();
+		FontMetrics metrics = graphics.getFontMetrics();
+		Rectangle2D rect = metrics.getStringBounds(caption, graphics);
+		int height = image.getHeight() + (int)rect.getHeight()+2*theme.textMargin;
+		int width = Math.max(image.getWidth(), (int)rect.getWidth()+2*theme.textMargin);
+		BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		graphics = result.createGraphics();
+		graphics.setColor(theme.textColor);
+		graphics.drawString(caption, (int)(-rect.getX())+theme.textMargin, (int)(-rect.getY())+theme.textMargin);
+		graphics.drawImage(image, 0, (int)rect.getHeight()+2*theme.textMargin, null);
+		return result;
+	}
 }

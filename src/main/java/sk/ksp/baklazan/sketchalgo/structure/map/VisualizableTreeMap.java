@@ -121,18 +121,9 @@ public class VisualizableTreeMap<K, V> extends TreeMap<K, V> implements Visualiz
 			result = croppedResult;
 		}
 		
-		if(myName != null)
+		if(myName != null && !inner)
 		{
-			FontMetrics metrics = graphics.getFontMetrics();
-			Rectangle2D rect = metrics.getStringBounds(myName, graphics);
-			int height = result.getHeight() + (int)rect.getHeight()+2*theme.textMargin;
-			int width = Math.max(result.getWidth(), (int)rect.getWidth()+2*theme.textMargin);
-			BufferedImage captionedResult = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-			graphics = captionedResult.createGraphics();
-			graphics.setColor(theme.textColor);
-			graphics.drawString(myName, (int)(-rect.getX())+theme.textMargin, (int)(-rect.getY())+theme.textMargin);
-			graphics.drawImage(result, 0, (int)rect.getHeight()+2*theme.textMargin, null);
-			return captionedResult;
+			result = ObjectDrawer.addCaption(result, myName, theme);
 		}
 		return result;
 	}
