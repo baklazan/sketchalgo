@@ -16,36 +16,20 @@ import javafx.scene.*;
 import javafx.application.*;
 
 
-public class VisualizableBinaryTree extends BinaryTree implements VisualizableStructure
+public class WrappedBinaryNode<T extends BinaryNode> extends VisualWrapped<T>
 {
-	/** Basic VisualizableStructure information*/
-	private String myName;
-	private StructureDisplayer displayer;
-	
-	/** Strategies (for customization)*/
-	private Theme theme;
-	
-	
-	/** VisualizableStructure overridden methods*/
-	
 	@Override
-	public BufferedImage draw()
-	{
-		return draw(null);
-	}
-	
-	@Override
-	public BufferedImage draw(Rectangle size)
+	public BufferedImage drawBasic(Rectangle size)
 	{
 		if(size == null) size = preferredSize();
-		if(root == null) return new BufferedImage(size.width, size.height, BufferedImage.TYPE_INT_ARGB);
+		if(wrapped == null) return new BufferedImage(size.width, size.height, BufferedImage.TYPE_INT_ARGB);
 		if(size.width <= 0) size.width = 1;
 		if(size.height <= 0) size.height = 1;
 		
 		Rectangle useSize = cropToPreferred(size);
 		
 		Rectangle cellSize = computeCellSize(useSize);
-		BufferedImage image = drawSubtree(root, cellSize).image;
+		BufferedImage image = drawSubtree(wrapped, cellSize).image;
 		BufferedImage result = new BufferedImage(size.width, size.height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D gr = result.createGraphics();
 		gr.drawImage(image, (size.width - image.getWidth())/2, (size.height - image.getHeight())/2, null);
@@ -70,47 +54,23 @@ public class VisualizableBinaryTree extends BinaryTree implements VisualizableSt
 	@Override
 	public Rectangle preferredSize()
 	{
-		if(root == null) return new Rectangle(1,1);
-		Rectangle cellSize = preferredCellSize(root);
-		return preferredTreeSize(root, cellSize);
-	}
-	
-	@Override
-	public void setDisplayer(StructureDisplayer displayer)
-	{
-		this.displayer = displayer;
-		if(this.displayer != null)
-		{
-			this.displayer.requestRedraw(this, 0);
-		}
-	}
-	
-	@Override
-	public void setInner(boolean inner)
-	{
+		if(wrapped == null) return new Rectangle(1,1);
+		Rectangle cellSize = preferredCellSize(wrapped);
+		return preferredTreeSize(wrapped, cellSize);
 	}
 	
 	
 	/** Constructors and related methods*/
 	
-	public VisualizableBinaryTree(BinaryNode root)
+	public WrappedBinaryNode(T node)
 	{
-		this(root, null);
+		super(node);
 	}
 	
-	public VisualizableBinaryTree(BinaryNode root, String name)
+	public WrappedBinaryNode(T node, String name)
 	{
-		super(root);
-		this.myName = name;
+		super(node, name);
 	}
-	
-	/** public setters */
-	
-	public void setTheme(Theme theme)
-	{
-		this.theme = theme;
-	}
-	
 	
 	/** misc private methods */
 	
@@ -162,9 +122,9 @@ public class VisualizableBinaryTree extends BinaryTree implements VisualizableSt
 	private Rectangle computeCellSize(Rectangle size)
 	{
 		int border = 2*theme.externalBorderOuter;
-		int numberOfNodes = nodesUnder(root);
+		int numberOfNodes = nodesUnder(wrapped);
 		int width = size.width / numberOfNodes - border;
-		int maxDepth = maximumDepth(root);
+		int maxDepth = maximumDepth(wrapped);
 		int heightIfSquare = maxDepth * (width+border) + (maxDepth-1)*width/2;
 		int height;
 		if(heightIfSquare > size.height)

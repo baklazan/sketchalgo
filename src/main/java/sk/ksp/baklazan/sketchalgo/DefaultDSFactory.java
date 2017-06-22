@@ -1,6 +1,7 @@
 package sk.ksp.baklazan.sketchalgo;
 import sk.ksp.baklazan.sketchalgo.structure.*;
 import sk.ksp.baklazan.sketchalgo.structure.arraylist.*;
+import sk.ksp.baklazan.sketchalgo.structure.binarytree.*;
 import sk.ksp.baklazan.sketchalgo.structure.map.*;
 import java.util.*;
 import java.lang.*;
@@ -159,14 +160,32 @@ public class DefaultDSFactory extends DSFactory
 		return new LayoutHint(reference, direction);
 	}
 	
-	public <T> ObjectWrapper<T> wrap(T t, boolean register)
+	@Override
+	public <T> Wrapped<T> wrap(T t, String name, boolean register)
 	{
-		return wrap(t, null, register);
+		VisualWrapped<T> result = new VisualWrapped<T>(t, name);
+		result.setTheme(theme);
+		if(register)
+		{
+			result.setDisplayer(watcher);
+			watcher.register(result);
+		}
+		return result;
 	}
 	
-	public <T> ObjectWrapper<T> wrap(T t, String name, boolean register)
+	public <T extends BinaryNode> Wrapped<T> wrapBinaryNode(T t)
 	{
-		VisualWrapper<T> result = new VisualWrapper<T>(name, t);
+		return wrapBinaryNode(t, false);
+	}
+	
+	public <T extends BinaryNode> Wrapped<T> wrapBinaryNode(T t, boolean register)
+	{
+		return wrapBinaryNode(t, null, register);
+	}
+	
+	public <T extends BinaryNode> Wrapped<T> wrapBinaryNode(T t, String name, boolean register)
+	{
+		WrappedBinaryNode<T> result = new WrappedBinaryNode<T>(t, name);
 		result.setTheme(theme);
 		if(register)
 		{

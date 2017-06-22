@@ -1,7 +1,7 @@
 package sk.ksp.baklazan.demo.test;
 import sk.ksp.baklazan.sketchalgo.*;
-import sk.ksp.baklazan.sketchalgo.structure.SleepConstants;
 import sk.ksp.baklazan.sketchalgo.structure.arraylist.*;
+import sk.ksp.baklazan.sketchalgo.structure.*;
 import sk.ksp.baklazan.sketchalgo.display.CanvasDisplayStrategy;
 import java.util.*;
 import java.io.*;
@@ -140,9 +140,9 @@ public class MainTask extends Thread
 	@Override
 	public void run()
 	{
-		int n;
+		Wrapped<Integer> n = factory.wrap(-1, "N", true);
 		Scanner in = new Scanner(System.in);
-		n = in.nextInt();
+		n.set(in.nextInt());
 		visualizer.setAlgorithmState("Loading matrices");
 		
 		ArrayList<ArrayList<Integer> > matrix1, matrix2, matrix3;
@@ -157,20 +157,20 @@ public class MainTask extends Thread
 		                                  factory.createHint(matrix1, LayoutHint.Direction.RIGHT),
 		                                  VerticalAssemblingStrategy.getInstance());
 		
-		for(int i=0; i<n; i++)
+		for(int i=0; i<n.get(); i++)
 		{
 			ArrayList<Integer> row = factory.createArrayList(null, false, factory.createSleepConstants(0,0,0,true));
-			for(int j=0; j<n; j++)
+			for(int j=0; j<n.get(); j++)
 			{
 				int e = in.nextInt();
 				row.add(e);
 			}
 			matrix1.add(row);
 		}
-		for(int i=0; i<n; i++)
+		for(int i=0; i<n.get(); i++)
 		{
 			ArrayList<Integer> row = factory.createArrayList(null, false, factory.createSleepConstants(0, 0,0, true));
-			for(int j=0; j<n; j++)
+			for(int j=0; j<n.get(); j++)
 			{
 				int e = in.nextInt();
 				row.add(e);
@@ -182,22 +182,22 @@ public class MainTask extends Thread
 		                                  factory.createSleepConstants(0, 0, 0, SleepConstants.GET_SILENT),
 		                                  factory.createHint(matrix2, LayoutHint.Direction.RIGHT),
 		                                  VerticalAssemblingStrategy.getInstance());
-		for(int i=0; i<n; i++)
+		for(int i=0; i<n.get(); i++)
 		{
 			ArrayList<Integer> row = factory.createArrayList(null, false, factory.createSleepConstants(0, 0, 600, true));
-			for(int j=0; j<n; j++)
+			for(int j=0; j<n.get(); j++)
 			{
 				row.add(0);
 			}
 			matrix3.add(row);
 		}
 		visualizer.setAlgorithmState("Multiplying matrices");
-		for(int y=0; y<n; y++)
+		for(int y=0; y<n.get(); y++)
 		{
-			for(int x=0; x<n; x++)
+			for(int x=0; x<n.get(); x++)
 			{
 				int res = 0;
-				for(int i=0; i<n; i++)
+				for(int i=0; i<n.get(); i++)
 				{
 					res += matrix1.get(y).get(i) * matrix2.get(i).get(x);
 				}

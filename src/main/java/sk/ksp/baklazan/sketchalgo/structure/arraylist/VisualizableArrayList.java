@@ -184,7 +184,6 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 	@Override
 	public E set(int index, E element)
 	{
-		
 		beingWritten.set(index, true);
 		requestRedrawAndDelay(sleepConstants.sleepSet / 2);
 		E result = super.set(index, element);
