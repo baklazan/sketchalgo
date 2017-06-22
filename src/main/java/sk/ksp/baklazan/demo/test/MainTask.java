@@ -26,8 +26,8 @@ public class MainTask extends Thread
 	public MainTask(Canvas canvas)
 	{
 		super("main task thread");
-		this.visualizer = new Visualizer(new CanvasDisplayStrategy(canvas));
-		this.factory = visualizer.getFactory();
+		this.factory = new DefaultDSFactory();
+		this.visualizer = new Visualizer(new CanvasDisplayStrategy(canvas), factory);
 	}
 	
 	private void mergeSort(ArrayList<Integer> list)

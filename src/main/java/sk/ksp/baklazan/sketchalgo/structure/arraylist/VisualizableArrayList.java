@@ -55,7 +55,6 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 			childrenImage.add(image);
 		}
 		
-		
 		for(int i=0; i<super.size(); i++)
 		{
 			BufferedImage image = childrenImage.get(i);
@@ -167,6 +166,7 @@ public class VisualizableArrayList<E> extends ArrayList<E> implements Visualizab
 				requestRedrawAndDelay(sleepConstants.sleepGet);
 				beingRead.set(index, false);
 				requestRedrawAndDelay(0);
+				break;
 			}
 			case SleepConstants.GET_BATCH:
 			{

@@ -51,6 +51,11 @@ public class TransitionDisplayStrategy implements DisplayStrategy
 		}
 		return animation;
 	}
+	
+	public void clearAnimation()
+	{
+		animation = new SequentialTransition();
+	}
 }
 
 class StillTransition extends Transition

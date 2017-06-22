@@ -106,9 +106,9 @@ public class Main
 			try
 			{
 				File file = new File(filename);
-				GifDisplayStrategy display = new GifDisplayStrategy(new Rectangle(1100, 600), file);
-				visualizer = new Visualizer(display);
-				factory = visualizer.getFactory();
+				GifDisplayStrategy display = new GifDisplayStrategy(new Rectangle(500, 500), file);
+				factory = new DefaultDSFactory();
+				visualizer = new Visualizer(display, factory);
 				have_fun(visualizer, factory);
 				display.close();
 			}

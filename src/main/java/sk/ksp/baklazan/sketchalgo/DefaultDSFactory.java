@@ -7,11 +7,26 @@ import java.lang.*;
 
 public class DefaultDSFactory extends DSFactory
 {
-	Theme theme;
+	protected Theme theme;
+	
+	public Theme getTheme()
+	{
+		return theme;
+	}
+	
+	public DefaultDSFactory()
+	{
+		this(new DefaultTheme());
+	}
 	
 	public DefaultDSFactory(AlgorithmWatcher watcher, Theme theme)
 	{
 		super(watcher);
+		this.theme = theme;
+	}
+	
+	public DefaultDSFactory(Theme theme)
+	{
 		this.theme = theme;
 	}
 	
@@ -120,18 +135,44 @@ public class DefaultDSFactory extends DSFactory
 	
 	public <K, V> TreeMap<K, V> createTreeMap(String name, boolean registered)
 	{
+		return createTreeMap(name, registered, null);
+	}
+	
+	public <K, V> TreeMap<K, V> createTreeMap(String name, boolean register, SleepConstants sleepConstants)
+	{
 		VisualizableTreeMap<K, V> result = new VisualizableTreeMap<K, V>(name);
-		if(registered)
+		result.setTheme(theme);
+		if(register)
 		{
 			result.setDisplayer(watcher);
 			watcher.register(result);
 		}
-		result.setTheme(theme);
+		if(sleepConstants != null)
+		{
+			result.setSleepConstants(sleepConstants);
+		}
 		return result;
 	}
 	
 	public LayoutHint createHint(Object reference, LayoutHint.Direction direction)
 	{
 		return new LayoutHint(reference, direction);
+	}
+	
+	public <T> ObjectWrapper<T> wrap(T t, boolean register)
+	{
+		return wrap(t, null, register);
+	}
+	
+	public <T> ObjectWrapper<T> wrap(T t, String name, boolean register)
+	{
+		VisualWrapper<T> result = new VisualWrapper<T>(name, t);
+		result.setTheme(theme);
+		if(register)
+		{
+			result.setDisplayer(watcher);
+			watcher.register(result);
+		}
+		return result;
 	}
 }

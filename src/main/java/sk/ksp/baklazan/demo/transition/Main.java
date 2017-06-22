@@ -46,8 +46,8 @@ public class Main extends Application
 		primaryStage.show();
 		
 		TransitionDisplayStrategy display = new TransitionDisplayStrategy(canvas);
-		visualizer = new Visualizer(display);
-		factory = visualizer.getFactory();
+		factory = new DefaultDSFactory();
+		visualizer = new Visualizer(display, factory);
 		have_fun();
 		animation = display.getAnimation();
 	}

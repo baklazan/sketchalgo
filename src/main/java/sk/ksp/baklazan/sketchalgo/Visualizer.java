@@ -17,39 +17,35 @@ import javafx.embed.swing.*;
 
 public class Visualizer implements AlgorithmWatcher
 {
-	private DefaultDSFactory factory;
+	private DSFactory factory;
 	private Canvas canvas;
 	private ArrayList<WeakReference<VisualizableStructure> > structures;
 	private Map<VisualizableStructure, LayoutHint> hints;
 	private String algorithmState;
-	private Theme theme;
 	private DisplayStrategy displayStrategy;
 	
 	@Override
-	public DefaultDSFactory getFactory()
+	public DSFactory getFactory()
 	{
 		return factory;
 	}
 	
 	public Visualizer(DisplayStrategy displayStrategy)
 	{
-		this(displayStrategy, new DefaultTheme());
+		this(displayStrategy, new DefaultDSFactory(new DefaultTheme()));
 	}
 	
-	public Theme getTheme()
-	{
-		return theme;
-	}
 	
-	public Visualizer(DisplayStrategy displayStrategy, Theme theme)
+	public Visualizer(DisplayStrategy displayStrategy, DSFactory factory)
 	{
-		factory = new DefaultDSFactory(this, theme);
+		this.factory = factory;
+		factory.setWatcher(this);
 		this.displayStrategy = displayStrategy;
 		structures = new ArrayList<WeakReference<VisualizableStructure> >();
 		hints = new IdentityHashMap<VisualizableStructure, LayoutHint>();
 		algorithmState = null;
-		this.theme = theme;
 	}
+	
 	
 	@Override
 	public void register(VisualizableStructure structure)

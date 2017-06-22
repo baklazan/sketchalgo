@@ -11,5 +11,4 @@ public interface AlgorithmWatcher extends StructureDisplayer
 	
 	void register(VisualizableStructure structure);
 	void register(VisualizableStructure structure, LayoutHint hint);
-	/** TODO: commands for watcher*/
 }
